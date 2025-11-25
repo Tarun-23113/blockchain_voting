@@ -59,4 +59,11 @@ contract Voting {
     function getDates() public view returns (uint256,uint256) {
       return (votingStart,votingEnd);
     }
+
+    function deleteCandidate(uint candidateID) public {
+        require(candidateID > 0 && candidateID <= countCandidates, "Invalid candidate ID");
+        
+        // Mark candidate as deleted by setting name to empty
+        delete candidates[candidateID];
+    }
 }

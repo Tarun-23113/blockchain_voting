@@ -8,33 +8,59 @@ var VotingContract = contract(votingArtifacts)
 
 
 window.App = {
-  eventStart: function() { 
-    window.ethereum.request({ method: 'eth_requestAccounts' });
+  eventStart: async function() { 
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
     VotingContract.setProvider(window.ethereum)
-    VotingContract.defaults({from: window.ethereum.selectedAddress,gas:6654755})
+    
+    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+    const account = accounts[0];
+    
+    VotingContract.defaults({from: account, gas:6654755})
 
     // Load account data
-    App.account = window.ethereum.selectedAddress;
-    $("#accountAddress").html("Your Account: " + window.ethereum.selectedAddress);
+    App.account = account;
+    $("#accountAddress").html("Your Account: " + account);
     VotingContract.deployed().then(function(instance){
      instance.getCountCandidates().then(function(countCandidates){
 
             $(document).ready(function(){
-              $('#addCandidate').click(function() {
+              $('#addCandidate').click(async function() {
                   var nameCandidate = $('#name').val();
                   var partyCandidate = $('#party').val();
-                 instance.addCandidate(nameCandidate,partyCandidate).then(function(result){ })
-
+                  
+                  if (!nameCandidate || !partyCandidate) {
+                    alert('Please enter both candidate name and party');
+                    return;
+                  }
+                  
+                  try {
+                    const result = await instance.addCandidate(nameCandidate, partyCandidate);
+                    console.log('Candidate added:', result);
+                    alert('Candidate added successfully!');
+                    location.reload();
+                  } catch(error) {
+                    console.error('Error adding candidate:', error);
+                    alert('Error adding candidate: ' + error.message);
+                  }
             });   
-              $('#addDate').click(function(){             
+              $('#addDate').click(async function(){             
                   var startDate = Date.parse(document.getElementById("startDate").value)/1000;
-
                   var endDate =  Date.parse(document.getElementById("endDate").value)/1000;
-           
-                  instance.setDates(startDate,endDate).then(function(rslt){ 
-                    console.log("tarihler verildi");
-                  });
-
+                  
+                  if (!startDate || !endDate) {
+                    alert('Please select both start and end dates');
+                    return;
+                  }
+                  
+                  try {
+                    const result = await instance.setDates(startDate, endDate);
+                    console.log("Dates set successfully:", result);
+                    alert('Voting dates set successfully!');
+                    location.reload();
+                  } catch(error) {
+                    console.error('Error setting dates:', error);
+                    alert('Error setting dates: ' + error.message);
+                  }
               });     
 
                instance.getDates().then(function(result){
@@ -53,8 +79,25 @@ window.App = {
               var name = data[1];
               var party = data[2];
               var voteCount = data[3];
-              var viewCandidates = `<tr><td> <input class="form-check-input" type="radio" name="candidate" value="${id}" id=${id}>` + name + "</td><td>" + party + "</td><td>" + voteCount + "</td></tr>"
-              $("#boxCandidate").append(viewCandidates)
+              
+              // Check if on admin page or voter page
+              var isAdminPage = window.location.pathname.includes('admin');
+              
+              if (name && name.trim() !== '') {
+                if (isAdminPage) {
+                  // Admin view with delete button
+                  var viewCandidates = `<tr>
+                    <td>${name}</td>
+                    <td>${party}</td>
+                    <td>${voteCount}</td>
+                    <td><button class="delete-btn" onclick="App.deleteCandidate(${id})" style="background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Delete</button></td>
+                  </tr>`;
+                } else {
+                  // Voter view with radio button
+                  var viewCandidates = `<tr><td> <input class="form-check-input" type="radio" name="candidate" value="${id}" id=${id}>` + name + "</td><td>" + party + "</td><td>" + voteCount + "</td></tr>";
+                }
+                $("#boxCandidate").append(viewCandidates);
+              }
             })
         }
         
@@ -89,6 +132,22 @@ window.App = {
     }).catch(function(err){ 
       console.error("ERROR! " + err.message)
     })
+  },
+
+  deleteCandidate: async function(candidateId) {
+    if (!confirm('Are you sure you want to delete this candidate?')) {
+      return;
+    }
+    
+    try {
+      const instance = await VotingContract.deployed();
+      await instance.deleteCandidate(candidateId);
+      alert('Candidate deleted successfully!');
+      window.location.reload();
+    } catch(error) {
+      console.error('Error deleting candidate:', error);
+      alert('Error deleting candidate: ' + error.message);
+    }
   }
 }
 

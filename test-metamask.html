@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MetaMask Connection Test</title>
+</head>
+<body>
+    <h1>MetaMask Connection Test</h1>
+    <button id="connectBtn">Connect MetaMask</button>
+    <div id="status"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const connectBtn = document.getElementById('connectBtn');
+        
+        connectBtn.addEventListener('click', async () => {
+            statusDiv.innerHTML = '<p>Testing...</p>';
+            
+            // Check if MetaMask is installed
+            if (typeof window.ethereum === 'undefined') {
+                statusDiv.innerHTML = '<p style="color:red;">❌ MetaMask is NOT installed!</p>';
+                return;
+            }
+            
+            statusDiv.innerHTML += '<p style="color:green;">✅ MetaMask is installed</p>';
+            
+            try {
+                // Request account access
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                statusDiv.innerHTML += `<p style="color:green;">✅ Connected to account: ${accounts[0]}</p>`;
+                
+                // Get network
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                statusDiv.innerHTML += `<p>Chain ID: ${chainId} (should be 0x539 or 1337 in decimal)</p>`;
+                
+                // Get balance
+                const balance = await window.ethereum.request({
+                    method: 'eth_getBalance',
+                    params: [accounts[0], 'latest']
+                });
+                const ethBalance = parseInt(balance, 16) / 1e18;
+                statusDiv.innerHTML += `<p>Balance: ${ethBalance.toFixed(4)} ETH</p>`;
+                
+                if (chainId !== '0x539') {
+                    statusDiv.innerHTML += '<p style="color:orange;">⚠️ Wrong network! Switch to Localhost 7545 (Chain ID 1337)</p>';
+                } else {
+                    statusDiv.innerHTML += '<p style="color:green;">✅ Correct network!</p>';
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML += `<p style="color:red;">❌ Error: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

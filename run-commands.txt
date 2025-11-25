@@ -1,0 +1,30 @@
+QUICK COMMAND REFERENCE FOR RUNNING THE PROJECT
+================================================
+
+PREREQUISITES (Do these first):
+1. Start Ganache application and open 'developement' workspace
+2. Make sure MySQL is running
+3. Update Database_API/.env with your MySQL credentials
+
+TERMINAL 1 - Compile & Bundle (Run once):
+cd Decentralized-Voting-System-Using-Ethereum-Blockchain
+truffle compile
+browserify ./src/js/app.js -o ./src/dist/app.bundle.js
+
+TERMINAL 2 - Start Node Server:
+cd Decentralized-Voting-System-Using-Ethereum-Blockchain
+node index.js
+
+TERMINAL 3 - Start Database API:
+cd Decentralized-Voting-System-Using-Ethereum-Blockchain/Database_API
+uvicorn main:app --reload --host 127.0.0.1
+
+TERMINAL 4 - Deploy Smart Contracts (Run once after Ganache is running):
+cd Decentralized-Voting-System-Using-Ethereum-Blockchain
+truffle migrate
+
+THEN OPEN: http://localhost:8080/
+
+LOGIN CREDENTIALS (use what you added to MySQL voters table):
+- Admin: voter_id and password you set
+- User: voter_id and password you set
